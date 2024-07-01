@@ -1,0 +1,172 @@
+{
+  "log": {
+    "level": "warn",
+    "output": "box.log",
+    "timestamp": true
+  },
+  "dns": {
+    "servers": [
+      {
+        "tag": "dns-remote",
+        "address": "udp://1.1.1.1",
+        "address_resolver": "dns-direct"
+      },
+      {
+        "tag": "dns-trick-direct",
+        "address": "https://sky.rethinkdns.com/",
+        "detour": "direct-fragment"
+      },
+      {
+        "tag": "dns-direct",
+        "address": "1.1.1.1",
+        "address_resolver": "dns-local",
+        "detour": "direct"
+      },
+      {
+        "tag": "dns-local",
+        "address": "local",
+        "detour": "direct"
+      },
+      {
+        "tag": "dns-block",
+        "address": "rcode://success"
+      }
+    ],
+    "rules": [
+      {
+        "domain": "cp.cloudflare.com",
+        "server": "dns-remote",
+        "rewrite_ttl": 10000
+      }
+    ],
+    "final": "dns-remote",
+    "static_ips": {
+      "sky.rethinkdns.com": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    },
+    "independent_cache": true
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "tag": "tun-in",
+      "mtu": 10000,
+      "inet4_address": "172.19.0.1/28",
+      "auto_route": true,
+      "strict_route": true,
+      "endpoint_independent_nat": true,
+      "stack": "mixed",
+      "sniff": true,
+      "sniff_override_destination": true
+    },
+    {
+      "type": "mixed",
+      "tag": "mixed-in",
+      "listen": "",
+      "listen_port": 22,
+      "sniff": true,
+      "sniff_override_destination": true
+    },
+    {
+      "type": "direct",
+      "tag": "dns-in",
+      "listen": "",
+      "listen_port": 22
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "selector",
+      "tag": "select",
+      "outbounds": [
+        "auto",
+        "National § 0",
+        "WoW § 1"
+      ],
+      "default": "auto"
+    },
+    {
+      "type": "urltest",
+      "tag": "auto",
+      "outbounds": [
+        "National § 0",
+        "WoW § 1"
+      ],
+      "url": "http://cp.cloudflare.com/",
+      "interval": "10m0s",
+      "idle_timeout": "1h40m0s"
+    },
+    {
+      "type": "wireguard",
+      "tag": "National § 0",
+      "local_address": [
+        "172.16.0.2/24",
+        "2606:4700:110:82f5:da11:6ec4:83db:606f/128"
+      ],
+      "private_key": "gOFEoNIupe3BVS3Gw1NGmhtbOFPByimF81M+LQOC8Ek=",
+      "server": "188.114.98.210",
+      "server_port": 7152,
+      "peer_public_key": "bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=",
+      "reserved": "DlId",
+      "mtu": 1330,
+      "fake_packets": "8-15",
+      "fake_packets_size": "40-100",
+      "fake_packets_delay": "20-250"
+    },
+    {
+      "type": "wireguard",
+      "tag": "WoW § 1",
+      "detour": "National § 0",
+      "local_address": [
+        "172.16.0.2/24",
+        "2606:4700:110:87d9:2b86:bee4:c293:629e/128"
+      ],
+      "private_key": "oHF6YRK2HxhU0Xjjp48OYxf+1uBX0xmNGmJhcz3RNnI=",
+      "server": "162.159.192.1",
+      "server_port": 7103,
+      "peer_public_key": "bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=",
+      "reserved": "5+57",
+      "mtu": 1280
+    },
+    {
+      "type": "dns",
+      "tag": "dns-out"
+    },
+    {
+      "type": "direct",
+      "tag": "direct"
+    },
+    {
+      "type": "direct",
+      "tag": "direct-fragment",
+      "tls_fragment": {
+        "enabled": true,
+        "size": "1-500",
+        "sleep": "0-500"
+      }
+    },
+    {
+      "type": "direct",
+      "tag": "bypass"
+    },
+    {
+      "type": "block",
+      "tag": "block"
+    }
+  ],
+  "route": {
+    "geoip": {
+      "path": "geo-assets/sagernet-sing-geoip-geoip.db"
+    },
+    "geosite": {
+      "path": "geo-assets/sagernet-sing-geosite-geosite.db"
